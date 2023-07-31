@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      SCRIPT_DIR: ${{ github.workspace }}/sources/pmm/src/github.com/percona/build/scripts
+      SCRIPT_DIR: ${{ github.workspace }}/SOURCES/pmm/src/github.com/percona/pmm/build/scripts
 
     steps:
       - name: Set environment variables
