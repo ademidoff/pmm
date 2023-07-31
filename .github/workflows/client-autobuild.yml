@@ -28,7 +28,8 @@ jobs:
       - name: Set environment variables
         run: |
           # Echo the name of the current branch
-          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          # https://stackoverflow.com/questions/58033366/how-to-get-the-current-branch-within-github-actions
+          GIT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           echo "Branch: $GIT_BRANCH"
           echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
 
@@ -39,11 +40,11 @@ jobs:
           ref: ${{ 'PMM-2.0' || env.GIT_BRANCH }}
           submodules: 'recursive'
 
-      - name: Set up Go release
-        uses: actions/setup-go@v4
-        with:
-          go-version-file: ${{ github.workspace }}/go.mod
-          cache: false
+      # - name: Set up Go release
+      #   uses: actions/setup-go@v4
+      #   with:
+      #     go-version-file: ${{ github.workspace }}/go.mod
+      #     cache: false
 
       # - name: Enable Go build cache
       #   uses: actions/cache@v3
