@@ -35,16 +35,6 @@ jobs:
           echo "Branch: $GIT_BRANCH"
           echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
 
-      - name: Login to ghcr.io registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull rpmbuild image
-        run: docker pull ghcr.io/${{ github.repository }}/rpmbuild:ol9
-
       - name: Check out code
         uses: actions/checkout@v3
         with:
@@ -116,6 +106,16 @@ jobs:
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
           ${{ env.SCRIPT_DIR }}/build-client-binary
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull rpmbuild image
+        run: docker pull ghcr.io/${{ github.repository }}/rpmbuild:ol9
 
       - name: Build client binary srpm
         run: |

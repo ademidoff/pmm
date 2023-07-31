@@ -265,7 +265,8 @@ build_srpm(){
     cd ${WORKDIR}
     rpmbuild -bs --define "_topdir ${WORKDIR}/rpmbuild" --define "version $VERSION" --define "release $RPM_RELEASE" --define "dist %{nil}" rpmbuild/SPECS/pmm2-client.spec
     mkdir -p ${WORKDIR}/srpm
-    mkdir -p ${CURDIR}/srpm
+    /usr/bin/sudo mkdir -p ${CURDIR}/srpm
+    /usr/bin/sudo chown $(id -u):$(id -g) ${CURDIR}/srpm
     cp rpmbuild/SRPMS/*.src.rpm ${CURDIR}/srpm
     cp rpmbuild/SRPMS/*.src.rpm ${WORKDIR}/srpm
 }
