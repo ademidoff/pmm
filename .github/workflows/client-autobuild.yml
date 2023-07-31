@@ -105,6 +105,13 @@ jobs:
           export ROOT_DIR=${{ github.workspace }}
           ${{ env.SCRIPT_DIR }}/build-client-binary
 
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build client binary srpm
         run: |
           set -o errexit
