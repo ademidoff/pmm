@@ -25,11 +25,18 @@ jobs:
       SCRIPT_DIR: ${{ github.workspace }}/sources/pmm/src/github.com/percona/build/scripts
 
     steps:
+      - name: Set environment variables
+        run: |
+          # Echo the name of the current branch
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          echo "Branch: $GIT_BRANCH"
+          echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
+
       - name: Check out code
         uses: actions/checkout@v3
         with:
           repository: percona-lab/pmm-submodules
-          ref: ${{ github.ref_name || 'PMM-2.0' }}
+          ref: ${{ 'PMM-2.0' || env.GIT_BRANCH }}
           submodules: 'recursive'
 
       - name: Set up Go release
