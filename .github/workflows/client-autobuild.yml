@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      SCRIPT_DIR: ${{ github.workspace }}/SOURCES/pmm/src/github.com/percona/pmm/build/scripts
+      SCRIPT_DIR: ${{ github.workspace }}/sources/pmm/src/github.com/percona/pmm/build/scripts
 
     steps:
       - name: Set environment variables
@@ -95,6 +95,7 @@ jobs:
         run: |
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
+          ls -la
           ${{ env.SCRIPT_DIR }}/build-client-source
 
       - name: Build client binary
@@ -102,7 +103,6 @@ jobs:
           # TODO: see if this step can be skipped
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
-          ls -la
           ${{ env.SCRIPT_DIR }}/build-client-binary
 
       - name: Build client binary srpm
