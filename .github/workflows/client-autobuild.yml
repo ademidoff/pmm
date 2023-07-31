@@ -22,11 +22,15 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      SCRIPT_DIR: ${{ github.workspace }}/build/scripts
+      SCRIPT_DIR: ${{ github.workspace }}/sources/pmm/src/github.com/percona/build/scripts
 
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+        with:
+          repository: percona-lab/pmm-submodules
+          ref: ${{ github.ref_name || 'PMM-2.0' }}
+          submodules: 'recursive'
 
       - name: Set up Go release
         uses: actions/setup-go@v4
@@ -34,27 +38,50 @@ jobs:
           go-version-file: ${{ github.workspace }}/go.mod
           cache: false
 
-      - name: Enable Go build cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/go-build
-          key: ${{ runner.os }}-go-build-${{ github.ref }}-${{ hashFiles('**') }}
-          restore-keys: |
-            ${{ runner.os }}-go-build-${{ github.ref }}-
-            ${{ runner.os }}-go-build-
+      # - name: Enable Go build cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.cache/go-build
+      #     key: ${{ runner.os }}-go-build-${{ github.ref }}-${{ hashFiles('**') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-go-build-${{ github.ref }}-
+      #       ${{ runner.os }}-go-build-
 
-      - name: Enable Go modules cache
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-modules-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-modules-
+      # - name: Enable Go modules cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/go/pkg/mod
+      #     key: ${{ runner.os }}-go-modules-${{ hashFiles('**/go.sum') }}
+      #     restore-keys: ${{ runner.os }}-go-modules-
 
-      - name: Download Go modules
-        run: go mod download -x
+      # - name: Download Go modules
+      #   run: go mod download -x
 
-      - name: Copy the VERSION file
-        run: curl -o VERSION https://raw.githubusercontent.com/Percona-Lab/pmm-submodules/PMM-2.0/VERSION
+      # - name: Copy the VERSION file
+      #   run: curl -o VERSION https://raw.githubusercontent.com/Percona-Lab/pmm-submodules/PMM-2.0/VERSION
+
+      - name: Prepare the environment
+        run: |
+          git submodule status
+          export commit_sha=$(git submodule status | grep 'pmm-managed' | awk -F ' ' '{print $1}')
+          export api_tests_commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
+          export api_tests_branch=$(git config -f .gitmodules submodule.pmm.branch)
+          export api_tests_url=$(git config -f .gitmodules submodule.pmm.url)
+          echo $api_tests_commit_sha > apiCommitSha
+          echo $api_tests_branch > apiBranch
+          echo $api_tests_url > apiURL
+          cat apiBranch
+          cat apiURL
+          export pmm_qa_commit_sha=$(git submodule status | grep 'pmm-qa' | awk -F ' ' '{print $1}')
+          export pmm_qa_branch=$(git config -f .gitmodules submodule.pmm-qa.branch)
+          echo $pmm_qa_branch > pmmQABranch
+          echo $pmm_qa_commit_sha > pmmQACommitSha
+          export pmm_ui_tests_commit_sha=$(git submodule status | grep 'pmm-ui-tests' | awk -F ' ' '{print $1}')
+          export pmm_ui_tests_branch=$(git config -f .gitmodules submodule.pmm-ui-tests.branch)
+          echo $pmm_ui_tests_branch > pmmUITestBranch
+          echo $pmm_ui_tests_commit_sha > pmmUITestsCommitSha
+          export fb_commit_sha=$(git rev-parse HEAD)
+          echo $fb_commit_sha > fbCommitSha
 
       - name: Build client source
         run: |
