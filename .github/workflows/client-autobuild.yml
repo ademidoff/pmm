@@ -93,6 +93,12 @@ jobs:
           export fb_commit_sha=$(git rev-parse HEAD)
           echo $fb_commit_sha > fbCommitSha
 
+          # checkout the feature branch
+          git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
+          git config -f .gitmodules submodule.pmm.branch ${{ env.GIT_BRANCH }}
+          git submodule sync
+          git submodule update --init --recursive --remote
+
       - name: Build client source
         run: |
           set -o errexit
