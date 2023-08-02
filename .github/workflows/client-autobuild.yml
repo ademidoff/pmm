@@ -73,7 +73,14 @@ jobs:
       - name: Prepare the environment
         run: |
           git submodule status
-          export commit_sha=$(git submodule status | grep 'pmm-managed' | awk -F ' ' '{print $1}')
+          # checkout the feature branch
+          git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
+          git config -f .gitmodules submodule.pmm.branch ${{ env.GIT_BRANCH }}
+          git submodule sync
+          # git submodule update --init --recursive --remote
+          git submodule update --init --recursive
+
+          export commit_sha=$(git submodule status | grep 'pmm/src/github.com/percona/pmm' | awk -F ' ' '{print $1}')
           export api_tests_commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
           export api_tests_branch=$(git config -f .gitmodules submodule.pmm.branch)
           export api_tests_url=$(git config -f .gitmodules submodule.pmm.url)
@@ -92,12 +99,6 @@ jobs:
           echo $pmm_ui_tests_commit_sha > pmmUITestsCommitSha
           export fb_commit_sha=$(git rev-parse HEAD)
           echo $fb_commit_sha > fbCommitSha
-
-          # checkout the feature branch
-          git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
-          git config -f .gitmodules submodule.pmm.branch ${{ env.GIT_BRANCH }}
-          git submodule sync
-          git submodule update --init --recursive --remote
 
       - name: Build client source
         run: |
