@@ -79,6 +79,7 @@ jobs:
               branch: ${{ env.GIT_BRANCH }}
           EOF
 
+          echo "GIHUB_API_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
           pip install -r requirements.txt
           python3 ci.py
           . ./.git-sources
