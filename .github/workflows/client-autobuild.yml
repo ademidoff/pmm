@@ -72,7 +72,7 @@ jobs:
 
       - name: Prepare the environment
         run: |
-          git pull --recurse-submodules
+          git submodule foreach git pull
           git submodule status
           # checkout the feature branch
           git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
@@ -81,7 +81,7 @@ jobs:
           git submodule update --init --recursive --remote
           git commit -am "fb: save current changes"
 
-          export commit_sha=$(git submodule status | grep 'pmm/src/github.com/percona/pmm' | awk -F ' ' '{print $1}')
+          export commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
           export api_tests_commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
           export api_tests_branch=$(git config -f .gitmodules submodule.pmm.branch)
           export api_tests_url=$(git config -f .gitmodules submodule.pmm.url)
