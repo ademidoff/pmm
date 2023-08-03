@@ -72,11 +72,13 @@ jobs:
 
       - name: Prepare the environment
         run: |
-          git submodule foreach git branch --show-current && git pull --ff-only # can be --ff-only or --rebase
-          git submodule status
           # checkout the feature branch
           git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
           git config -f .gitmodules submodule.pmm.branch ${{ env.GIT_BRANCH }}
+          git config submodule.pmm.update "git pull origin ${{ env.GIT_BRANCH }}"
+          git submodule foreach git branch --show-current # git pull --ff-only # can be --ff-only or --rebase
+          git submodule status
+
           git submodule sync
           git submodule update --init --remote
           git commit -am "fb: save current changes"
