@@ -79,6 +79,7 @@ jobs:
               branch: ${{ env.GIT_BRANCH }}
           EOF
 
+          pip install -r requirements.txt
           python3 ci.py
           . ./.git-sources
           echo $pmm_commit > apiCommitSha
