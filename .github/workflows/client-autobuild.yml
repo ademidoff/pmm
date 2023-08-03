@@ -72,7 +72,7 @@ jobs:
 
       - name: Prepare the environment
         run: |
-          git submodule foreach git pull
+          git submodule foreach git pull --no-rebase # can be --ff-only or --rebase
           git submodule status
           # checkout the feature branch
           git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
