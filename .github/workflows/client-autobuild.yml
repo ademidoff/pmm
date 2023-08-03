@@ -72,6 +72,7 @@ jobs:
 
       - name: Prepare the environment
         run: |
+          git pull --recurse-submodules
           git submodule status
           # checkout the feature branch
           git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
