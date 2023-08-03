@@ -77,8 +77,8 @@ jobs:
           git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
           git config -f .gitmodules submodule.pmm.branch ${{ env.GIT_BRANCH }}
           git submodule sync
-          # git submodule update --init --recursive --remote
-          git submodule update --init --recursive
+          git submodule update --init --recursive --remote
+          git commit -am "fb: save current changes"
 
           export commit_sha=$(git submodule status | grep 'pmm/src/github.com/percona/pmm' | awk -F ' ' '{print $1}')
           export api_tests_commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
@@ -128,6 +128,7 @@ jobs:
         run: |
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
+          mkdir -p $ROOT_DIR/results/srpm
           ${{ env.SCRIPT_DIR }}/build-client-srpm ghcr.io/${{ github.repository }}/rpmbuild:ol9
 
       - name: Build client binary rpm
