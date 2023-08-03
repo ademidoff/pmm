@@ -76,7 +76,7 @@ jobs:
           cat > ./ci.yml <<EOF
           deps:
             - name: pmm
-              url: https://github.com/atymchuk/pmm.git
+              url: https://github.com/atymchuk/pmm
               branch: ${{ env.GIT_BRANCH }}
           EOF
 
