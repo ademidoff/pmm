@@ -169,7 +169,7 @@ jobs:
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
           export PUSH_DOCKER=1
-          export DOCKER_CLIENT_TAG=atymchuk/pmm:${{ env.GIT_BRANCH }}
+          export DOCKER_CLIENT_TAG=ghcr.io/atymchuk/pmm:${{ env.GIT_BRANCH }}
           ${{ env.SCRIPT_DIR }}/build-client-docker
 
       - name: Build server packages
