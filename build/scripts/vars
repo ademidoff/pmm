@@ -22,10 +22,7 @@ full_pmm_version=${pmm_base_version}-${pmm_branch}-$(git rev-parse --short HEAD)
 # - pmm-2.* branches are used in non-exporter repos
 # - PMM-2.0 is the default pmm-submodules branch
 # - main can be used everywhere
-if [[ ${pmm_branch} =~ release-* || \
-      ${pmm_branch} =~ pmm-2.* || \
-      ${pmm_branch} == PMM-2.0 || \
-      ${pmm_branch} == "main" ]]; then
+if [[ ${pmm_branch} =~ release-*|pmm-2.*|PMM-2.0|main ]]; then
     full_pmm_version=${pmm_base_version}
 fi
 

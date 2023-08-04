@@ -263,11 +263,17 @@ build_srpm(){
     cp ${WORKDIR}/${NAME}-${VERSION}/rpm/*.spec .
     cp ${WORKDIR}/${TARFILE} ../SOURCES/
     cd ${WORKDIR}
-    rpmbuild -bs --define "_topdir ${WORKDIR}/rpmbuild" --define "version $VERSION" --define "release $RPM_RELEASE" --define "dist %{nil}" rpmbuild/SPECS/pmm2-client.spec
+
+    rpmbuild -bs --define "_topdir ${WORKDIR}/rpmbuild" \
+      --define "version $VERSION" \
+      --define "release $RPM_RELEASE" \
+      --define "dist %{nil}" \
+      rpmbuild/SPECS/pmm2-client.spec
+
     mkdir -p ${WORKDIR}/srpm
     mkdir -p ${CURDIR}/srpm
-    cp rpmbuild/SRPMS/*.src.rpm ${CURDIR}/srpm
-    sudo cp rpmbuild/SRPMS/*.src.rpm ${WORKDIR}/srpm
+    cp rpmbuild/SRPMS/*.src.rpm ${WORKDIR}/srpm
+    sudo cp rpmbuild/SRPMS/*.src.rpm ${CURDIR}/srpm
 }
 
 build_rpm(){
@@ -298,6 +304,7 @@ build_rpm(){
     rm -fr rpmbuild
     mkdir -vp rpmbuild/{SOURCES,SPECS,BUILD,SRPMS,RPMS}
     cp $SRC_RPM rpmbuild/SRPMS/
+
     rpmbuild --define "_topdir ${WORKDIR}/rpmbuild" \
              --define "version $pmm_version" \
              --define "release $RPM_RELEASE" \
