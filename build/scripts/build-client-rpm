@@ -10,7 +10,7 @@ tmp_dir=${root_dir}/tmp
 
 main() {
     local IMAGE=${1:-${rpmbuild_docker_image}}
-    docker run --rm -u $(id -u):$(id -g) -v ${bin_dir}:/home/builder/bin -v ${root_dir}/results:/home/builder/results ${IMAGE} sh -c "
+    docker run --rm -v ${bin_dir}:/home/builder/bin -v ${root_dir}/results:/home/builder/results ${IMAGE} sh -c "
         set -o errexit
         set -o xtrace
 
@@ -26,7 +26,7 @@ main() {
                 --builddir=/tmp/pmm \
                 --build_rpm=1
         popd
-        # \$sudo_path chown -R $(id -u):$(id -g) /home/builder/results/rpm
+        \$sudo_path chown -R $(id -u):$(id -g) /home/builder/results/rpm
     "
 }
 

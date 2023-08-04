@@ -266,9 +266,8 @@ build_srpm(){
     rpmbuild -bs --define "_topdir ${WORKDIR}/rpmbuild" --define "version $VERSION" --define "release $RPM_RELEASE" --define "dist %{nil}" rpmbuild/SPECS/pmm2-client.spec
     mkdir -p ${WORKDIR}/srpm
     mkdir -p ${CURDIR}/srpm
-    # /usr/bin/sudo chown $(id -u):$(id -g) ${CURDIR}/srpm
     cp rpmbuild/SRPMS/*.src.rpm ${CURDIR}/srpm
-    cp rpmbuild/SRPMS/*.src.rpm ${WORKDIR}/srpm
+    sudo cp rpmbuild/SRPMS/*.src.rpm ${WORKDIR}/srpm
 }
 
 build_rpm(){
@@ -311,9 +310,8 @@ build_rpm(){
     fi
     mkdir -p ${WORKDIR}/rpm
     mkdir -p ${CURDIR}/rpm
-    # /usr/bin/sudo chown $(id -u):$(id -g) ${CURDIR}/rpm
     cp rpmbuild/RPMS/*/*.rpm ${WORKDIR}/rpm
-    cp rpmbuild/RPMS/*/*.rpm ${CURDIR}/rpm
+    sudo cp rpmbuild/RPMS/*/*.rpm ${CURDIR}/rpm
 }
 
 build_source_deb(){
