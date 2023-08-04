@@ -1,0 +1,4 @@
+deps:
+  - name: pmm
+    url: https://github.com/atymchuk/pmm
+    branch: PMM-7-build-srpm-for-client-autobuild

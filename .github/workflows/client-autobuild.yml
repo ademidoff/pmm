@@ -39,21 +39,21 @@ jobs:
           echo "Branch: $GIT_BRANCH"
           echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
 
-          curl https://dl.min.io/client/mc/release/linux-amd64/mc \
+          echo "Installing minio client..."
+          curl -s https://dl.min.io/client/mc/release/linux-amd64/mc \
             --create-dirs \
             -o $HOME/minio/mc
 
           chmod +x $HOME/minio/mc
-          export PATH=$PATH:$HOME/minio
+          sudo mv $HOME/minio/mc /usr/bin/
 
-          if ! mc --version 2>/dev/null; then
-            echo "mc (minio client) could not be installed"
+          mc alias set s3 ${{ env.MINIO_ENDPOINT }} ${{ env.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
+
+          echo "PATH: $PATH"
+          if ! curl -s -o ci.yml https://raw.githubusercontent.com/atymchuk/pmm/${{ github.sha }}/ci.yml; then
+            echo "Failed to download ci.yml"
             exit 1
-          else
-            mc alias set s3 ${{ env.MINIO_ENDPOINT }} ${{ env.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
           fi
-
-          which jq || true
           exit 1
 
       - name: Check out code
@@ -93,13 +93,6 @@ jobs:
 
       - name: Prepare the environment
         run: |
-          cat > ./ci.yml <<EOF
-          deps:
-            - name: pmm
-              url: https://github.com/atymchuk/pmm
-              branch: ${{ env.GIT_BRANCH }}
-          EOF
-
           pip install -r requirements.txt
           python3 ci.py
           . ./.git-sources
