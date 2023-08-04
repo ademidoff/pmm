@@ -26,18 +26,34 @@ jobs:
     env:
       SCRIPT_DIR: ${{ github.workspace }}/sources/pmm/src/github.com/percona/pmm/build/scripts
       GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT}}
+      MINIO_ACCESS_KEY: ${{secrets.MINIO_ACCESS_KEY}}
+      MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY}}
 
     steps:
-      - name: Set environment variables
+      - name: Configure the environment
         run: |
-          # Echo the name of the current branch
+          # Get the name of the current branch
           # https://stackoverflow.com/questions/58033366/how-to-get-the-current-branch-within-github-actions
           GIT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           echo "Branch: $GIT_BRANCH"
           echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
+
+          curl https://dl.min.io/client/mc/release/linux-amd64/mc \
+            --create-dirs \
+            -o $HOME/minio/mc
+
+          chmod +x $HOME/minio/mc
+          export PATH=$PATH:$HOME/minio
+
           if ! mc --version 2>/dev/null; then
-            echo "mc (minio client) is not installed"
+            echo "mc (minio client) could not be installed"
+            exit 1
+          else
+            mc alias set s3 ${{ env.MINIO_ENDPOINT }} ${{ env.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
           fi
+
+          which jq || true
           exit 1
 
       - name: Check out code
@@ -190,6 +206,6 @@ jobs:
         if: ${{ failure() }}
         run: |
           pwd
-          env
-          go env
+          env | sort
+          go env | sort
           git status
