@@ -127,6 +127,7 @@ jobs:
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
           ls -la
+          cat ./.git-sources
           ${{ env.SCRIPT_DIR }}/build-client-source
 
       - name: Build client binary
@@ -157,6 +158,7 @@ jobs:
         run: |
           set -o errexit
           export ROOT_DIR=${{ github.workspace }}
+          mkdir -p $ROOT_DIR/results/rpm
           ${{ env.SCRIPT_DIR }}/build-client-rpm ghcr.io/${{ github.repository }}/rpmbuild:ol9
 
           mkdir -p tmp/pmm-server/RPMS/
