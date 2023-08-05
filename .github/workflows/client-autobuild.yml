@@ -40,19 +40,20 @@ jobs:
           echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
 
           echo "Installing minio client..."
-          curl -s https://dl.min.io/client/mc/release/linux-amd64/mc \
-            --create-dirs \
-            -o $HOME/minio/mc
+          curl -s -o $HOME/mc https://dl.min.io/client/mc/release/linux-amd64/mc
 
-          chmod +x $HOME/minio/mc
-          sudo mv $HOME/minio/mc /usr/bin/
+          chmod +x $HOME/mc
+          sudo mv $HOME/mc /usr/local/bin/
 
           mc alias set s3 ${{ env.MINIO_ENDPOINT }} ${{ env.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
 
           echo "PATH: $PATH"
+          echo "Downloading ci.yml..."
           if ! curl -s -o ci.yml https://raw.githubusercontent.com/atymchuk/pmm/${{ github.sha }}/ci.yml; then
             echo "Failed to download ci.yml"
             exit 1
+          else
+            cat ci.yml
           fi
           exit 1
 
