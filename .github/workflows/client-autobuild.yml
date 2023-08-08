@@ -47,7 +47,6 @@ jobs:
 
           mc alias set s3 ${{ env.MINIO_ENDPOINT }} ${{ env.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
 
-          echo "PATH: $PATH"
           echo "Downloading ci.yml..."
           if ! curl -s -o ci.yml https://raw.githubusercontent.com/atymchuk/pmm/${{ github.sha }}/ci.yml; then
             echo "Failed to download ci.yml"
