@@ -1,4 +1,4 @@
-name: "Create a feature build"
+name: "pmmbot"
 
 on:
   issue_comment:
@@ -16,6 +16,7 @@ on:
 
 jobs:
   fb:
+    name: Create a feature build
     runs-on: ubuntu-latest
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '@pmmbot create-fb')
     steps:
@@ -29,7 +30,7 @@ jobs:
           repository: percona-lab/pmm-submodules
           ref: PMM-2.0
 
-      - name: Create a FB
+      - name: Create a branch
         run: |
           echo "Creating a feature build for branch: $BRANCH"
           
