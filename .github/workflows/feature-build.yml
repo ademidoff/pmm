@@ -7,6 +7,13 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "The branch to build the feature from"
+        required: true
+        type: string    
+
 jobs:
   fb:
     runs-on: ubuntu-latest
@@ -14,8 +21,7 @@ jobs:
     steps:
       - name: Extract branch name
         shell: bash
-        run: echo "BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}" >> $GITHUB_ENV
-        id: extract_branch        
+        run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
       - name: Checkout pmm-submodules
         uses: actions/checkout@v3
@@ -36,8 +42,8 @@ jobs:
           cat ci.yml
           
           # create a branch with the same name
-          git checkout -b ${{ steps.extract_branch.outputs.branch }}
-          git commit -a -m "FB[bot]: ${{ steps.extract_branch.outputs.branch }}"
+          git checkout -b $BRANCH
+          git commit -a -m "FB[bot]: $BRANCH"
           # print debug info
-          git branch
+          git status
           git log --oneline -n 10
