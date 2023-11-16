@@ -104,6 +104,7 @@ jobs:
                 - ./managed/testdata/checks:/srv/checks
           EOF
 
+          # Run it and wait until it's healthy
           docker compose -f compose.pmm-server-test.yml up -d --wait --wait-timeout=100
 
       - name: Build the test image
