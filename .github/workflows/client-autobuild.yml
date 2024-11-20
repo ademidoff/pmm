@@ -1,0 +1,204 @@
+name: 'Client'
+
+on:
+  push:
+    branches:
+      - main
+      - pmm-*
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+
+  pull_request:
+    paths:
+      - '.github/workflows/client-autobuild.yml'
+      - 'admin/**'
+      - 'agent/**'
+
+jobs:
+  autobuild:
+    name: Client autobuild
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+    env:
+      SCRIPT_DIR: ${{ github.workspace }}/sources/pmm/src/github.com/percona/pmm/build/scripts
+      GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT}}
+      MINIO_ACCESS_KEY: ${{secrets.MINIO_ACCESS_KEY}}
+      MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY}}
+
+    steps:
+      - name: Configure the environment
+        run: |
+          # Get the name of the current branch
+          # https://stackoverflow.com/questions/58033366/how-to-get-the-current-branch-within-github-actions
+          GIT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          echo "Branch: $GIT_BRANCH"
+          echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
+
+          echo "Installing minio client..."
+          curl -s -o $HOME/mc https://dl.min.io/client/mc/release/linux-amd64/mc
+
+          chmod +x $HOME/mc
+          sudo mv $HOME/mc /usr/local/bin/
+
+          mc alias set s3 ${{ env.MINIO_ENDPOINT }} ${{ env.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
+
+          echo "Downloading ci.yml..."
+          if ! curl -s -o ci.yml https://raw.githubusercontent.com/atymchuk/pmm/${{ github.sha }}/ci.yml; then
+            echo "Failed to download ci.yml"
+            exit 1
+          else
+            cat ci.yml
+          fi
+          exit 1
+
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          repository: percona-lab/pmm-submodules
+          ref: ${{ 'PMM-2.0' || env.GIT_BRANCH }}
+          submodules: 'recursive'
+
+      # - name: Set up Go release
+      #   uses: actions/setup-go@v4
+      #   with:
+      #     go-version-file: ${{ github.workspace }}/go.mod
+      #     cache: false
+
+      # - name: Enable Go build cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.cache/go-build
+      #     key: ${{ runner.os }}-go-build-${{ github.ref }}-${{ hashFiles('**') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-go-build-${{ github.ref }}-
+      #       ${{ runner.os }}-go-build-
+
+      # - name: Enable Go modules cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/go/pkg/mod
+      #     key: ${{ runner.os }}-go-modules-${{ hashFiles('**/go.sum') }}
+      #     restore-keys: ${{ runner.os }}-go-modules-
+
+      # - name: Download Go modules
+      #   run: go mod download -x
+
+      # - name: Copy the VERSION file
+      #   run: curl -o VERSION https://raw.githubusercontent.com/Percona-Lab/pmm-submodules/PMM-2.0/VERSION
+
+      - name: Prepare the environment
+        run: |
+          pip install -r requirements.txt
+          python3 ci.py
+          . ./.git-sources
+          echo $pmm_commit > apiCommitSha
+          echo $pmm_branch > apiBranch
+          echo $pmm_url > apiURL
+          echo $pmm_qa_branch > pmmQABranch
+          echo $pmm_qa_commit > pmmQACommitSha
+          echo $pmm_ui_tests_branch > pmmUITestBranch
+          echo $pmm_ui_tests_commit > pmmUITestsCommitSha
+
+          # checkout the feature branch
+          # git config -f .gitmodules submodule.pmm.url https://github.com/atymchuk/pmm.git # TODO: remove this line
+          # git config -f .gitmodules submodule.pmm.branch ${{ env.GIT_BRANCH }}
+          # git config submodule.pmm.update "git pull origin ${{ env.GIT_BRANCH }}"
+          # git submodule foreach git branch --show-current # git pull --ff-only # can be --ff-only or --rebase
+          # git submodule status
+
+          # git submodule sync
+          # git submodule update --init --remote
+          # git commit -am "fb: save current changes"
+
+          # export commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
+          # export api_tests_commit_sha=$(git submodule status | grep 'sources/pmm/src' | awk -F ' ' '{print $1}')
+          # export api_tests_branch=$(git config -f .gitmodules submodule.pmm.branch)
+          # export api_tests_url=$(git config -f .gitmodules submodule.pmm.url)
+          # echo $api_tests_commit_sha > apiCommitSha
+          # echo $api_tests_branch > apiBranch
+          # echo $api_tests_url > apiURL
+          # cat apiBranch
+          # cat apiURL
+          # export pmm_qa_commit_sha=$(git submodule status | grep 'pmm-qa' | awk -F ' ' '{print $1}')
+          # export pmm_qa_branch=$(git config -f .gitmodules submodule.pmm-qa.branch)
+          # echo $pmm_qa_branch > pmmQABranch
+          # echo $pmm_qa_commit_sha > pmmQACommitSha
+          # export pmm_ui_tests_commit_sha=$(git submodule status | grep 'pmm-ui-tests' | awk -F ' ' '{print $1}')
+          # export pmm_ui_tests_branch=$(git config -f .gitmodules submodule.pmm-ui-tests.branch)
+          # echo $pmm_ui_tests_branch > pmmUITestBranch
+          # echo $pmm_ui_tests_commit_sha > pmmUITestsCommitSha
+          # export fb_commit_sha=$(git rev-parse HEAD)
+          # echo $fb_commit_sha > fbCommitSha
+
+      - name: Build client source
+        run: |
+          set -o errexit
+          export ROOT_DIR=${{ github.workspace }}
+          ls -la
+          cat ./.git-sources
+          ${{ env.SCRIPT_DIR }}/build-client-source
+
+      - name: Build client binary
+        run: |
+          # TODO: see if this step can be skipped
+          set -o errexit
+          export ROOT_DIR=${{ github.workspace }}
+          ${{ env.SCRIPT_DIR }}/build-client-binary
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull rpmbuild image
+        run: docker pull ghcr.io/${{ github.repository }}/rpmbuild:ol9
+
+      - name: Build client source rpm
+        run: |
+          set -o errexit
+          export ROOT_DIR=${{ github.workspace }}
+          mkdir -p "$ROOT_DIR/results/srpm"
+          ${{ env.SCRIPT_DIR }}/build-client-srpm ghcr.io/${{ github.repository }}/rpmbuild:ol9
+
+      - name: Build client binary rpm
+        run: |
+          set -o errexit
+          export ROOT_DIR=${{ github.workspace }}
+          mkdir -p "$ROOT_DIR/results/rpm"
+          ${{ env.SCRIPT_DIR }}/build-client-rpm ghcr.io/${{ github.repository }}/rpmbuild:ol9
+
+          mkdir -p tmp/pmm-server/RPMS/
+          cp results/rpm/pmm*-client-*.rpm tmp/pmm-server/RPMS/
+
+      - name: Build client docker
+        run: |
+          set -o errexit
+          export ROOT_DIR=${{ github.workspace }}
+          export PUSH_DOCKER=1
+          export DOCKER_CLIENT_TAG=ghcr.io/${{ github.repository }}:${{ env.GIT_BRANCH }}
+          ${{ env.SCRIPT_DIR }}/build-client-docker
+
+      - name: Build server packages
+        run: |
+          set -o errexit
+          export ROOT_DIR=${{ github.workspace }}
+          export RPM_EPOCH=1
+          export PATH=${PATH}:$(pwd -P)/${{ env.SCRIPT_DIR }}
+          export RPMBUILD_DOCKER_IMAGE=ghcr.io/${{ github.repository }}/rpmbuild:ol9
+          export RPMBUILD_DIST="el9"
+          ${{ env.SCRIPT_DIR }}/build-server-rpm-all
+
+      - name: Run debug commands on failure
+        if: ${{ failure() }}
+        run: |
+          pwd
+          env | sort
+          go env | sort
+          git status

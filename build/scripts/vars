@@ -19,18 +19,19 @@ full_pmm_version=${pmm_base_version}-${pmm_branch}-$(git rev-parse --short HEAD)
 # Replace '/' with '-' to prevent sed from failing on dependabot-authored PRs
 full_pmm_version=${full_pmm_version//\//-}
 
-# TODO Maybe it makes sense to use variable from job here
-if [[ ${pmm_branch} =~ release-* || \
-      ${pmm_branch} =~ pmm-2.* || \
-      ${pmm_branch} == PMM-2.0 || \
-      ${pmm_branch} == "main" ]]; then
+# TODO Maybe it makes sense to use a variable from the job here
+# - release-* branches are used in exporters
+# - pmm-2.* branches are used in non-exporter repos
+# - PMM-2.0 is the default pmm-submodules branch
+# - main can be used everywhere
+if [[ ${pmm_branch} =~ release-*|pmm-2.*|PMM-2.0|main ]]; then
     full_pmm_version=${pmm_base_version}
 fi
 
 new_pmm_version=$(cat ${root_dir}/VERSION | awk -F'-' '{print $1}')
 new_pmm_release=$(cat ${root_dir}/VERSION | awk -F'-' '{print $2}')
 
-# Failsafe during refactoring - check that we did not redefine pmm_version in some other script
+# Protect ourselves during refactoring - check that we did not redefine pmm_version in some other script
 if [ -n "${pmm_version}" ] && [ "${new_pmm_version}" != "${pmm_version}" ]; then
     echo "pmm_version is already defined: ${pmm_version}"
     exit 1
