@@ -1,0 +1,12 @@
+name: Feature build
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: [self-hosted, linux, x64, cloud]
+    steps:
+      - name: No-op
+        run: echo "Feature build ran on $(hostname)"
