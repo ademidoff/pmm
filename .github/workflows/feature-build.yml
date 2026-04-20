@@ -1,12 +1,123 @@
-name: Feature build
+name: Feature Build
 
 on:
-  pull_request:
-  workflow_dispatch:
+  issue_comment:
+    types: [created]
 
 jobs:
-  noop:
+  build:
+    name: PMM #${{ github.event.issue.number }}
     runs-on: [self-hosted, linux, x64, cloud]
+    # Only handle PR comments that start with @pmm-bot
+    if: github.event.issue.pull_request != null && startsWith(github.event.comment.body, '@pmm-bot')
+    permissions:
+      issues: write        # post comments and reactions
+      pull-requests: write
+      actions: write       # trigger workflow_dispatch
+
     steps:
-      - name: No-op
-        run: echo "Feature build ran on $(hostname)"
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Prepare the repos
+        run: |
+          cp -r /opt/cache ${{ github.workspace }}/
+          ls -la ${{ github.workspace }}/cache/repos
+
+      # - name: Build
+      #   run: |
+      #     cd build/pipeline
+      #     make build-${{ github.event.inputs.target }}
+
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body        = context.payload.comment.body.trim();
+            const sender      = context.payload.comment.user.login;
+            const owner       = context.repo.owner;
+            const repo        = context.repo.repo;
+            const issueNumber = context.payload.issue.number;
+            const commentId   = context.payload.comment.id;
+
+            // ── 1. Permission check ──────────────────────────────────────────
+            let permission;
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner, repo, username: sender,
+              });
+              permission = data.permission;
+            } catch (e) {
+              // Non-collaborators get a 404 from this endpoint.
+              permission = 'none';
+            }
+
+            if (!['write', 'admin'].includes(permission)) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issueNumber,
+                body: `@${sender} You need write access to trigger bot commands.`,
+              });
+              return;
+            }
+
+            // ── 2. Acknowledge ───────────────────────────────────────────────
+            await github.rest.reactions.createForIssueComment({
+              owner, repo, comment_id: commentId, content: 'eyes',
+            });
+
+            // ── 3. Resolve the PR branch ─────────────────────────────────────
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: issueNumber,
+            });
+            const ref = pr.head.ref;
+
+            // ── 4. Parse command ─────────────────────────────────────────────
+            // Strip the "@pmm-bot " prefix and normalise whitespace.
+            const cmd = body.replace(/^@pmm-bot\s+/i, '').trim().toLowerCase();
+
+            const COMMANDS = {
+              'build all':    { workflow: 'build-pipeline.yml', inputs: { target: 'all'    } },
+              'build client': { workflow: 'build-pipeline.yml', inputs: { target: 'client' } },
+              'build server': { workflow: 'build-pipeline.yml', inputs: { target: 'server' } },
+              'run api tests':  { workflow: 'api-tests.yml',    inputs: { branch: pr.head.ref }                   },
+            };
+
+            const HELP_TEXT =
+              '**Available commands:**\n' +
+              '- `@pmm-bot build all` — build client + server\n' +
+              '- `@pmm-bot build client` — build client only\n' +
+              '- `@pmm-bot build server` — build server only\n' +
+              '- `@pmm-bot run API tests` — run API test suite\n' +
+              '- `@pmm-bot help` — show this message\n';
+
+            if (cmd === 'help') {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issueNumber, body: HELP_TEXT,
+              });
+              return;
+            }
+
+            if (!(cmd in COMMANDS)) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issueNumber,
+                body: `Unknown command: \`${cmd}\`\n\n${HELP_TEXT}`,
+              });
+              return;
+            }
+
+            // ── 5. Dispatch ──────────────────────────────────────────────────
+            const { workflow, inputs } = COMMANDS[cmd];
+            await github.rest.actions.createWorkflowDispatch({
+              owner, repo,
+              workflow_id: workflow,
+              ref,
+              inputs: { ...inputs },
+            });
+
+            // ── 6. Confirm ───────────────────────────────────────────────────
+            const runsUrl =
+              `https://github.com/${owner}/${repo}/actions/workflows/${workflow}`;
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: issueNumber,
+              body: `@${sender} Dispatched \`${cmd}\` on branch \`${ref}\`. [View runs](${runsUrl})`,
+            });
