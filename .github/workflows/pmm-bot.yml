@@ -1,23 +1,35 @@
-name: PMM Bot
+name: Build Bot
 
 on:
   issue_comment:
     types: [created]
 
 jobs:
-  dispatch:
+  build:
+    name: Build PMM
+    runs-on: [self-hosted, linux, x64, cloud]
     # Only handle PR comments that start with @pmm-bot
-    if: >
-      github.event.issue.pull_request != null &&
-      startsWith(github.event.comment.body, '@pmm-bot')
-    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request != null && startsWith(github.event.comment.body, '@pmm-bot')
     permissions:
       issues: write        # post comments and reactions
       pull-requests: write
       actions: write       # trigger workflow_dispatch
 
     steps:
-      - uses: actions/github-script@v7
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Prepare the repos
+        run: |
+          cp -r /opt/cache ${{ github.workspace }}/
+          ls -la ${{ github.workspace }}/cache/repos
+
+      # - name: Build
+      #   run: |
+      #     cd build/pipeline
+      #     make build-${{ github.event.inputs.target }}
+
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -64,17 +76,17 @@ jobs:
             const cmd = body.replace(/^@pmm-bot\s+/i, '').trim().toLowerCase();
 
             const COMMANDS = {
-              'rebuild all':    { workflow: 'build-pipeline.yml', inputs: { target: 'all'    } },
-              'rebuild client': { workflow: 'build-pipeline.yml', inputs: { target: 'client' } },
-              'rebuild server': { workflow: 'build-pipeline.yml', inputs: { target: 'server' } },
-              'run api tests':  { workflow: 'api-tests.yml',      inputs: {}                   },
+              'build all':    { workflow: 'build-pipeline.yml', inputs: { target: 'all'    } },
+              'build client': { workflow: 'build-pipeline.yml', inputs: { target: 'client' } },
+              'build server': { workflow: 'build-pipeline.yml', inputs: { target: 'server' } },
+              'run api tests':  { workflow: 'api-tests.yml',    inputs: {}                   },
             };
 
             const HELP_TEXT =
               '**Available commands:**\n' +
-              '- `@pmm-bot rebuild all` — build client + server\n' +
-              '- `@pmm-bot rebuild client` — build client only\n' +
-              '- `@pmm-bot rebuild server` — build server only\n' +
+              '- `@pmm-bot build all` — build client + server\n' +
+              '- `@pmm-bot build client` — build client only\n' +
+              '- `@pmm-bot build server` — build server only\n' +
               '- `@pmm-bot run API tests` — run API test suite\n' +
               '- `@pmm-bot help` — show this message\n';
 
