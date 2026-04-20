@@ -1,4 +1,4 @@
-name: PMM Bot
+name: Feature Build
 
 on:
   issue_comment:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Build PMM
+    name: PMM #${{ github.event.issue.number }}
     runs-on: [self-hosted, linux, x64, cloud]
     # Only handle PR comments that start with @pmm-bot
     if: github.event.issue.pull_request != null && startsWith(github.event.comment.body, '@pmm-bot')
@@ -79,7 +79,7 @@ jobs:
               'build all':    { workflow: 'build-pipeline.yml', inputs: { target: 'all'    } },
               'build client': { workflow: 'build-pipeline.yml', inputs: { target: 'client' } },
               'build server': { workflow: 'build-pipeline.yml', inputs: { target: 'server' } },
-              'run api tests':  { workflow: 'api-tests.yml',    inputs: {}                   },
+              'run api tests':  { workflow: 'api-tests.yml',    inputs: { branch: pr.head.ref }                   },
             };
 
             const HELP_TEXT =
@@ -111,7 +111,7 @@ jobs:
               owner, repo,
               workflow_id: workflow,
               ref,
-              inputs: { ...inputs, pr_number: String(issueNumber) },
+              inputs: { ...inputs },
             });
 
             // ── 6. Confirm ───────────────────────────────────────────────────
