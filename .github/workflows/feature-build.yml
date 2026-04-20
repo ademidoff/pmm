@@ -75,18 +75,21 @@ jobs:
             // Strip the "@pmm-bot " prefix and normalise whitespace.
             const cmd = body.replace(/^@pmm-bot\s+/i, '').trim().toLowerCase();
 
-            const COMMANDS = {
-              'build all':    { workflow: 'build-pipeline.yml', inputs: { target: 'all'    } },
-              'build client': { workflow: 'build-pipeline.yml', inputs: { target: 'client' } },
-              'build server': { workflow: 'build-pipeline.yml', inputs: { target: 'server' } },
-              'run api tests':  { workflow: 'api-tests.yml',    inputs: { branch: pr.head.ref }                   },
+            const DISPATCH_COMMANDS = {
+              'run api tests': { workflow: 'api-tests.yml', inputs: { branch: ref } },
             };
+
+            const STUB_COMMANDS = new Set([
+              'build all',
+              'build client',
+              'build server',
+            ]);
 
             const HELP_TEXT =
               '**Available commands:**\n' +
-              '- `@pmm-bot build all` — build client + server\n' +
-              '- `@pmm-bot build client` — build client only\n' +
-              '- `@pmm-bot build server` — build server only\n' +
+              '- `@pmm-bot build all` — build client + server (not yet implemented)\n' +
+              '- `@pmm-bot build client` — build client only (not yet implemented)\n' +
+              '- `@pmm-bot build server` — build server only (not yet implemented)\n' +
               '- `@pmm-bot run API tests` — run API test suite\n' +
               '- `@pmm-bot help` — show this message\n';
 
@@ -97,7 +100,15 @@ jobs:
               return;
             }
 
-            if (!(cmd in COMMANDS)) {
+            if (STUB_COMMANDS.has(cmd)) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issueNumber,
+                body: `@${sender} \`${cmd}\` is not yet implemented — skipping.`,
+              });
+              return;
+            }
+
+            if (!(cmd in DISPATCH_COMMANDS)) {
               await github.rest.issues.createComment({
                 owner, repo, issue_number: issueNumber,
                 body: `Unknown command: \`${cmd}\`\n\n${HELP_TEXT}`,
@@ -106,7 +117,7 @@ jobs:
             }
 
             // ── 5. Dispatch ──────────────────────────────────────────────────
-            const { workflow, inputs } = COMMANDS[cmd];
+            const { workflow, inputs } = DISPATCH_COMMANDS[cmd];
             await github.rest.actions.createWorkflowDispatch({
               owner, repo,
               workflow_id: workflow,
