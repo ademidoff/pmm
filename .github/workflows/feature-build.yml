@@ -32,11 +32,6 @@ jobs:
       # - name: Checkout
       #   uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Prepare the repos
-        run: |
-          cp -r /opt/cache ${{ github.workspace }}/
-          ls -la ${{ github.workspace }}/cache/repos
-
       - id: command
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
@@ -135,8 +130,13 @@ jobs:
               body: `@${sender} Dispatched \`${cmd}\` on branch \`${ref}\`. [View runs](${runsUrl})`,
             });
 
+      - name: Restore cache
+        if: steps.command.outputs.target != ''
+        run: |
+          cp -r /opt/cache ${{ github.workspace }}/
+          ls -la ${{ github.workspace }}/cache/repos
+
       - name: Build PMM
         if: steps.command.outputs.target != ''
         run: |
           curl -sSL https://raw.githubusercontent.com/percona/pmm/v3/build/pipeline/scripts/bootstrap | bash -s -- --target=${{ steps.command.outputs.target }} --skip-cache
-
