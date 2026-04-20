@@ -16,6 +16,19 @@ jobs:
       actions: write       # trigger workflow_dispatch
 
     steps:
+      - name: Acknowledge comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes',
+              headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+            });
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -60,18 +73,13 @@ jobs:
               return;
             }
 
-            // ── 2. Acknowledge ───────────────────────────────────────────────
-            await github.rest.reactions.createForIssueComment({
-              owner, repo, comment_id: commentId, content: 'eyes',
-            });
-
-            // ── 3. Resolve the PR branch ─────────────────────────────────────
+            // ── 2. Resolve the PR branch ─────────────────────────────────────
             const { data: pr } = await github.rest.pulls.get({
               owner, repo, pull_number: issueNumber,
             });
             const ref = pr.head.ref;
 
-            // ── 4. Parse command ─────────────────────────────────────────────
+            // ── 3. Parse command ─────────────────────────────────────────────
             // Strip the "@pmm-bot " prefix and normalise whitespace.
             const cmd = body.replace(/^@pmm-bot\s+/i, '').trim().toLowerCase();
 
@@ -116,16 +124,17 @@ jobs:
               return;
             }
 
-            // ── 5. Dispatch ──────────────────────────────────────────────────
+            // ── 4. Dispatch ──────────────────────────────────────────────────
             const { workflow, inputs } = DISPATCH_COMMANDS[cmd];
             await github.rest.actions.createWorkflowDispatch({
               owner, repo,
               workflow_id: workflow,
               ref,
               inputs: { ...inputs },
+              headers: { 'X-GitHub-Api-Version': '2022-11-28' },
             });
 
-            // ── 6. Confirm ───────────────────────────────────────────────────
+            // ── 5. Confirm ───────────────────────────────────────────────────
             const runsUrl =
               `https://github.com/${owner}/${repo}/actions/workflows/${workflow}`;
             await github.rest.issues.createComment({
