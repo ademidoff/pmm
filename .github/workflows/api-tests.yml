@@ -11,7 +11,12 @@ on:
 
   workflow_dispatch:
     inputs:
-      PMM_SERVER_IMAGE:
+      branch:
+        description: "The branch to pull API tests from"
+        default: "v3"
+        required: true
+        type: string
+      pmm-server-image:
         description: "PMM Server image version"
         default: "ghcr.io/percona/pmm:3-dev-container"
         required: true
@@ -19,12 +24,12 @@ on:
 
   workflow_call:
     inputs:
-      BRANCH:
+      branch:
         description: "The branch to pull API tests from"
         default: "v3"
         required: true
         type: string
-      PMM_SERVER_IMAGE:
+      pmm-server-image:
         description: "PMM Server image version"
         default: "ghcr.io/percona/pmm:3-dev-container"
         required: true
@@ -39,8 +44,8 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       PMM_URL: https://admin:admin@127.0.0.1
-      BRANCH: ${{ github.event.inputs.BRANCH || 'v3' }}
-      PMM_SERVER_IMAGE: ${{ github.event.inputs.PMM_SERVER_IMAGE }}
+      BRANCH: ${{ github.event.inputs.branch || 'v3' }}
+      PMM_SERVER_IMAGE: ${{ github.event.inputs.pmm-server-image }}
 
     steps:
       - name: Check out code
